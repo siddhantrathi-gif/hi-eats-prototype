@@ -105,7 +105,7 @@ const TryIt = () => {
 
   const toggleSelection = (
     value: string,
-    list: string[],
+    _list: string[],
     setList: React.Dispatch<React.SetStateAction<string[]>>
   ) => {
     setList((prev) =>
