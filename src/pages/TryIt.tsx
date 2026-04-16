@@ -8,6 +8,18 @@ type Item = {
   helper?: string;
 };
 
+type IngredientQuantity =
+  | {
+      type: "count";
+      value: number;
+      unit: "eggs" | "slices";
+    }
+  | {
+      type: "level";
+      value: "low" | "medium" | "high";
+      unit: "amount";
+    };
+
 const ingredientOptions: Item[] = [
   { id: "egg", label: "Eggs", emoji: "🥚" },
   { id: "cheese", label: "Cheese", emoji: "🧀" },
@@ -100,6 +112,16 @@ const TryIt = () => {
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>(["stove", "pan"]);
   const [selectedConstraints, setSelectedConstraints] = useState<string[]>(["quick"]);
+  const [ingredientQuantities, setIngredientQuantities] = useState<Record<string, IngredientQuantity>>({
+    egg: { type: "count", value: 2, unit: "eggs" },
+    bread: { type: "count", value: 4, unit: "slices" },
+    cheese: { type: "level", value: "medium", unit: "amount" },
+    milk: { type: "level", value: "medium", unit: "amount" },
+    rice: { type: "level", value: "medium", unit: "amount" },
+    pasta: { type: "level", value: "medium", unit: "amount" },
+    tomato: { type: "level", value: "medium", unit: "amount" },
+    chicken: { type: "level", value: "medium", unit: "amount" },
+  });
 
   const currentStep = steps[stepIndex];
 
@@ -113,12 +135,46 @@ const TryIt = () => {
     );
   };
 
+  const updateIngredientQuantity = (id: string, quantity: IngredientQuantity) => {
+    setIngredientQuantities((prev) => ({
+      ...prev,
+      [id]: quantity,
+    }));
+  };
+
+  const getQuantityLabel = (id: string) => {
+    const quantity = ingredientQuantities[id];
+    if (!quantity) return null;
+
+    if (quantity.type === "count") {
+      if (quantity.unit === "eggs") {
+        return `${quantity.value} egg${quantity.value === 1 ? "" : "s"}`;
+      }
+      if (quantity.unit === "slices") {
+        return `${quantity.value} slice${quantity.value === 1 ? "" : "s"}`;
+      }
+    }
+
+    if (quantity.type === "level") {
+      if (quantity.value === "low") return "A little";
+      if (quantity.value === "medium") return "Some";
+      return "A lot";
+    }
+
+    return null;
+  };
+
   const ingredientLabels = useMemo(
     () =>
       ingredientOptions
         .filter((item) => selectedIngredients.includes(item.id))
-        .map((item) => `${item.emoji} ${item.label}`),
-    [selectedIngredients]
+        .map((item) => {
+          const quantityLabel = getQuantityLabel(item.id);
+          return quantityLabel
+            ? `${item.emoji} ${item.label} (${quantityLabel})`
+            : `${item.emoji} ${item.label}`;
+        }),
+    [selectedIngredients, ingredientQuantities]
   );
 
   const equipmentLabels = useMemo(
@@ -195,17 +251,152 @@ const TryIt = () => {
             </div>
 
             {stepIndex === 0 && (
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {ingredientOptions.map((item) => (
-                  <SelectionCard
-                    key={item.id}
-                    item={item}
-                    selected={selectedIngredients.includes(item.id)}
-                    onToggle={() =>
-                      toggleSelection(item.id, selectedIngredients, setSelectedIngredients)
-                    }
-                  />
-                ))}
+              <div className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {ingredientOptions.map((item) => (
+                    <SelectionCard
+                      key={item.id}
+                      item={item}
+                      selected={selectedIngredients.includes(item.id)}
+                      onToggle={() =>
+                        toggleSelection(item.id, selectedIngredients, setSelectedIngredients)
+                      }
+                    />
+                  ))}
+                </div>
+
+                {selectedIngredients.length > 0 && (
+                  <div className="rounded-3xl border border-orange-200 bg-orange-50/60 p-5">
+                    <div className="mb-1 text-sm font-semibold uppercase tracking-[0.16em] text-orange-700">
+                      Rough amounts
+                    </div>
+                    <p className="mb-5 text-sm text-stone-600">
+                      Only for a few key ingredients, so it helps the AI without making this annoying.
+                    </p>
+
+                    <div className="space-y-4">
+                      {selectedIngredients.includes("egg") && (
+                        <div className="rounded-2xl bg-white p-4">
+                          <div className="mb-2 flex items-center justify-between">
+                            <div className="font-semibold text-stone-900">🥚 Eggs</div>
+                            <div className="text-sm font-medium text-stone-600">
+                              {getQuantityLabel("egg")}
+                            </div>
+                          </div>
+                          <input
+                            type="range"
+                            min={1}
+                            max={12}
+                            value={
+                              ingredientQuantities.egg?.type === "count"
+                                ? ingredientQuantities.egg.value
+                                : 2
+                            }
+                            onChange={(e) =>
+                              updateIngredientQuantity("egg", {
+                                type: "count",
+                                value: Number(e.target.value),
+                                unit: "eggs",
+                              })
+                            }
+                            className="w-full accent-orange-500"
+                          />
+                          <div className="mt-1 flex justify-between text-xs text-stone-400">
+                            <span>1</span>
+                            <span>6</span>
+                            <span>12</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {selectedIngredients.includes("bread") && (
+                        <div className="rounded-2xl bg-white p-4">
+                          <div className="mb-2 flex items-center justify-between">
+                            <div className="font-semibold text-stone-900">🍞 Bread</div>
+                            <div className="text-sm font-medium text-stone-600">
+                              {getQuantityLabel("bread")}
+                            </div>
+                          </div>
+                          <input
+                            type="range"
+                            min={1}
+                            max={12}
+                            value={
+                              ingredientQuantities.bread?.type === "count"
+                                ? ingredientQuantities.bread.value
+                                : 4
+                            }
+                            onChange={(e) =>
+                              updateIngredientQuantity("bread", {
+                                type: "count",
+                                value: Number(e.target.value),
+                                unit: "slices",
+                              })
+                            }
+                            className="w-full accent-orange-500"
+                          />
+                          <div className="mt-1 flex justify-between text-xs text-stone-400">
+                            <span>1 slice</span>
+                            <span>6</span>
+                            <span>12+</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {["cheese", "milk", "rice", "pasta", "tomato", "chicken"]
+                        .filter((id) => selectedIngredients.includes(id))
+                        .map((id) => {
+                          const item = ingredientOptions.find((option) => option.id === id);
+                          if (!item) return null;
+
+                          const currentLevel =
+                            ingredientQuantities[id]?.type === "level"
+                              ? ingredientQuantities[id].value
+                              : "medium";
+
+                          return (
+                            <div key={id} className="rounded-2xl bg-white p-4">
+                              <div className="mb-3 flex items-center justify-between">
+                                <div className="font-semibold text-stone-900">
+                                  {item.emoji} {item.label}
+                                </div>
+                                <div className="text-sm font-medium text-stone-600">
+                                  {getQuantityLabel(id)}
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                {[
+                                  { value: "low", label: "A little" },
+                                  { value: "medium", label: "Some" },
+                                  { value: "high", label: "A lot" },
+                                ].map((option) => (
+                                  <button
+                                    key={option.value}
+                                    type="button"
+                                    onClick={() =>
+                                      updateIngredientQuantity(id, {
+                                        type: "level",
+                                        value: option.value as "low" | "medium" | "high",
+                                        unit: "amount",
+                                      })
+                                    }
+                                    className={`rounded-full px-3 py-1.5 text-sm transition ${
+                                      currentLevel === option.value
+                                        ? "bg-orange-500 text-white"
+                                        : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                                    }`}
+                                  >
+                                    {option.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -313,6 +504,15 @@ const TryIt = () => {
                   <pre className="mt-4 overflow-x-auto rounded-2xl bg-stone-900 p-4 text-xs text-stone-100">
 {`{
   "ingredients": ${JSON.stringify(selectedIngredients, null, 2)},
+  "ingredientQuantities": ${JSON.stringify(
+    Object.fromEntries(
+      Object.entries(ingredientQuantities).filter(([key]) =>
+        selectedIngredients.includes(key)
+      ),
+    ),
+    null,
+    2
+  )},
   "equipment": ${JSON.stringify(selectedEquipment, null, 2)},
   "constraints": ${JSON.stringify(selectedConstraints, null, 2)}
 }`}
