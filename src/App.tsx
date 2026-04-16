@@ -3,7 +3,6 @@ import Index from "./pages/Index";
 import TryIt from "./pages/TryIt";
 import AuthPage from "./pages/AuthPage";
 
-
 export default function App() {
   return (
     <Routes>
