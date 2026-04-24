@@ -69,13 +69,20 @@ const Index = () => {
             better options.
           </p>
 
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:justify-center">
             <Link
               to="/try-it"
               className="inline-flex items-center gap-2 rounded-2xl bg-orange-600 px-6 py-4 text-white shadow-sm transition hover:bg-orange-700"
             >
               <ChefHat className="h-5 w-5" />
               What can I eat with what's in my fridge?
+            </Link>
+
+            <Link
+              to="/auth"
+              className="inline-flex items-center rounded-2xl border border-stone-300 bg-white px-5 py-4 text-stone-800 shadow-sm transition hover:bg-stone-100"
+            >
+              Sign in / Create account
             </Link>
 
             <a
@@ -155,13 +162,22 @@ const Index = () => {
             It starts with what's already in your kitchen.
           </p>
 
-          <Link
-            to="/try-it"
-            className="inline-flex items-center gap-2 rounded-2xl bg-orange-600 px-6 py-4 text-white shadow-sm transition hover:bg-orange-700"
-          >
-            <ChefHat className="h-5 w-5" />
-            Let's find a meal
-          </Link>
+          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link
+              to="/try-it"
+              className="inline-flex items-center gap-2 rounded-2xl bg-orange-600 px-6 py-4 text-white shadow-sm transition hover:bg-orange-700"
+            >
+              <ChefHat className="h-5 w-5" />
+              Let's find a meal
+            </Link>
+
+            <Link
+              to="/auth"
+              className="inline-flex items-center rounded-2xl border border-stone-300 bg-white px-5 py-4 text-stone-800 shadow-sm transition hover:bg-stone-100"
+            >
+              Sign in
+            </Link>
+          </div>
         </div>
       </section>
 
