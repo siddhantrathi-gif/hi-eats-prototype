@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ChefHat, Sparkles } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
 type Item = {
   id: string;
@@ -19,6 +20,17 @@ type IngredientQuantity =
       value: "low" | "medium" | "high";
       unit: "amount";
     };
+
+type RecipeResponse = {
+  title: string;
+  description: string;
+  prep_time: string;
+  cook_time: string;
+  servings: string;
+  ingredients: string[];
+  steps: string[];
+  why_it_fits: string;
+};
 
 const ingredientOptions: Item[] = [
   { id: "egg", label: "Eggs", emoji: "🥚" },
@@ -123,6 +135,10 @@ const TryIt = () => {
     chicken: { type: "level", value: "medium", unit: "amount" },
   });
 
+  const [recipe, setRecipe] = useState<RecipeResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const currentStep = steps[stepIndex];
 
   const toggleSelection = (
@@ -199,6 +215,65 @@ const TryIt = () => {
     (stepIndex === 2 && selectedConstraints.length > 0) ||
     stepIndex === 3;
 
+  const handleGenerateRecipe = async () => {
+    setLoading(true);
+    setError("");
+    setRecipe(null);
+
+    const ingredientsText = ingredientOptions
+      .filter((item) => selectedIngredients.includes(item.id))
+      .map((item) => {
+        const quantityLabel = getQuantityLabel(item.id);
+        return quantityLabel ? `${item.label} (${quantityLabel})` : item.label;
+      })
+      .join(", ");
+
+    const equipmentText = equipmentOptions
+      .filter((item) => selectedEquipment.includes(item.id))
+      .map((item) => item.label)
+      .join(", ");
+
+    const constraintsText = constraintOptions
+      .filter((item) => selectedConstraints.includes(item.id))
+      .map((item) => item.label)
+      .join(", ");
+
+    const quickConstraint = selectedConstraints.includes("quick")
+      ? "15-20 minutes"
+      : selectedConstraints.includes("low-effort")
+      ? "under 30 minutes with low effort"
+      : "any";
+
+    const dietaryPreferences = [
+      selectedConstraints.includes("vegetarian") ? "vegetarian" : null,
+      selectedConstraints.includes("high-protein") ? "high protein" : null,
+      selectedConstraints.includes("green-heavy") ? "vegetable-forward" : null,
+      selectedConstraints.includes("meal-prep") ? "good for leftovers" : null,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    const { data, error } = await supabase.functions.invoke("generate-recipe", {
+      body: {
+        ingredients: `${ingredientsText}. Available equipment: ${equipmentText}.`,
+        cuisine: selectedConstraints.includes("comfort") ? "comfort food" : "any",
+        dietary_preferences:
+          dietaryPreferences || `User preferences today: ${constraintsText}`,
+        allergies: "None specified",
+        cooking_time: quickConstraint,
+      },
+    });
+
+    if (error) {
+      setError(error.message || "Failed to generate recipe.");
+      setLoading(false);
+      return;
+    }
+
+    setRecipe(data as RecipeResponse);
+    setLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#fffaf4] text-stone-900">
       <div className="mx-auto max-w-6xl px-4 py-8 md:py-12">
@@ -213,7 +288,7 @@ const TryIt = () => {
             </h1>
             <p className="mt-3 max-w-2xl text-base leading-7 text-stone-600">
               First choose ingredients, then equipment, then what kind of meal you want.
-              Later, this same data can be sent straight to your backend recipe engine.
+              Now this data can be sent straight to your backend recipe engine.
             </p>
           </div>
         </div>
@@ -495,11 +570,10 @@ const TryIt = () => {
                 <div className="rounded-3xl border border-dashed border-orange-300 bg-white p-5">
                   <div className="mb-2 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-orange-700">
                     <Sparkles className="h-4 w-4" />
-                    What would happen next
+                    What will be sent
                   </div>
                   <p className="leading-7 text-stone-600">
-                    Later, this exact selection bundle can be posted to your backend AI route
-                    to generate 2–3 customized recipe ideas.
+                    This selection bundle will be sent to your backend OpenAI route to generate one personalized recipe.
                   </p>
                   <pre className="mt-4 overflow-x-auto rounded-2xl bg-stone-900 p-4 text-xs text-stone-100">
 {`{
@@ -518,6 +592,55 @@ const TryIt = () => {
 }`}
                   </pre>
                 </div>
+
+                {error && (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {error}
+                  </div>
+                )}
+
+                {recipe && (
+                  <div className="rounded-3xl border border-stone-200 bg-white p-6 shadow-sm">
+                    <h3 className="text-2xl font-black tracking-tight text-stone-900">
+                      {recipe.title}
+                    </h3>
+                    <p className="mt-2 leading-7 text-stone-600">{recipe.description}</p>
+
+                    <div className="mt-4 grid gap-3 md:grid-cols-3">
+                      <div className="rounded-2xl bg-stone-50 p-3 text-sm text-stone-700">
+                        <strong>Prep:</strong> {recipe.prep_time}
+                      </div>
+                      <div className="rounded-2xl bg-stone-50 p-3 text-sm text-stone-700">
+                        <strong>Cook:</strong> {recipe.cook_time}
+                      </div>
+                      <div className="rounded-2xl bg-stone-50 p-3 text-sm text-stone-700">
+                        <strong>Servings:</strong> {recipe.servings}
+                      </div>
+                    </div>
+
+                    <div className="mt-6">
+                      <h4 className="font-semibold text-stone-900">Ingredients</h4>
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-stone-700">
+                        {recipe.ingredients?.map((item, i) => (
+                          <li key={i}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="mt-6">
+                      <h4 className="font-semibold text-stone-900">Steps</h4>
+                      <ol className="mt-2 list-decimal space-y-2 pl-5 text-stone-700">
+                        {recipe.steps?.map((step, i) => (
+                          <li key={i}>{step}</li>
+                        ))}
+                      </ol>
+                    </div>
+
+                    <div className="mt-6 rounded-2xl bg-orange-50 p-4 text-stone-700">
+                      <strong>Why it fits:</strong> {recipe.why_it_fits}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -545,9 +668,11 @@ const TryIt = () => {
               ) : (
                 <button
                   type="button"
-                  className="inline-flex items-center gap-2 rounded-2xl bg-stone-900 px-6 py-3 font-semibold text-white"
+                  onClick={handleGenerateRecipe}
+                  disabled={loading || selectedIngredients.length === 0}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-stone-900 px-6 py-3 font-semibold text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Generate my recipe
+                  {loading ? "Generating..." : "Generate my recipe"}
                   <Sparkles className="h-4 w-4" />
                 </button>
               )}

@@ -47,19 +47,7 @@ export default function AuthPage() {
         const user = data.user;
         if (!user) throw new Error("No user returned after sign in.");
 
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("id, onboarding_complete")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (profileError) throw profileError;
-
-        if (!profile || !profile.onboarding_complete) {
-          navigate("/onboarding");
-        } else {
-          navigate("/");
-        }
+        navigate("/onboarding");
       }
     } catch (error: any) {
       setMessage(error.message || "Something went wrong.");
