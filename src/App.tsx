@@ -5,6 +5,7 @@ import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import TryIt from "./pages/TryIt";
 import ProfilePage from "./pages/ProfilePage";
+import Community from "./pages/Community";
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/try-it" element={<TryIt />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/community" element={<Community />} />
       </Routes>
     </>
   );

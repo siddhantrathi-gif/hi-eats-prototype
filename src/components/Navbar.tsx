@@ -1,11 +1,18 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 type NavUser = {
   id: string;
   email: string | null;
 } | null;
+
+const navItemClass = ({ isActive }: { isActive: boolean }) =>
+  `rounded-xl px-3 py-2 text-sm font-medium transition ${
+    isActive
+      ? "bg-emerald-100 text-emerald-700"
+      : "text-stone-700 hover:bg-stone-100"
+  }`;
 
 export default function Navbar() {
   const [user, setUser] = useState<NavUser>(null);
@@ -60,19 +67,20 @@ export default function Navbar() {
   };
 
   return (
-    <header className="border-b border-stone-200 bg-white">
+    <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
         <Link to="/" className="text-xl font-extrabold tracking-tight text-stone-900">
           Hi-Eats
         </Link>
 
         <nav className="flex items-center gap-2">
-          <Link
-            to="/try-it"
-            className="rounded-xl px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
-          >
+          <NavLink to="/try-it" className={navItemClass}>
             Try It
-          </Link>
+          </NavLink>
+
+          <NavLink to="/community" className={navItemClass}>
+            Community
+          </NavLink>
 
           {!loading && !user && (
             <>
@@ -93,12 +101,9 @@ export default function Navbar() {
 
           {!loading && user && (
             <>
-              <Link
-                to="/profile"
-                className="rounded-xl px-3 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
-              >
+              <NavLink to="/profile" className={navItemClass}>
                 Profile
-              </Link>
+              </NavLink>
               <button
                 type="button"
                 onClick={handleSignOut}
