@@ -82,6 +82,10 @@ export default function Navbar() {
             Community
           </NavLink>
 
+          <NavLink to="/payment" className={navItemClass}>
+            Pay Now 💳
+          </NavLink>
+
           {!loading && !user && (
             <>
               <Link
